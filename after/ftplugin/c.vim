@@ -59,13 +59,13 @@ function s:EndLine(key) "{{{
     endif
     call setpos('.', saveCursor)
 
-    if a:key == '' " <CR>
+    if a:key == "\r"
         if InComment() || AlreadyEnded() || BlankLine() || Macro()
             return a:key
         else
             return eolChar . a:key
         endif
-    elseif a:key == '' " <Esc>
+    elseif a:key == "\e" " <Esc>
         if InComment() || AlreadyEnded() || BlankLine() || !EOL() || Macro()
             return a:key
         else
@@ -112,15 +112,15 @@ function s:ExpandStatement() "{{{
             let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
         endif
         call setline('.', newLine)
-        return "o}O"
+        return "\eo}\eO"
     " match structure inizilization
     elseif line =~ '=\s*{\s*$'
         echom 'assign {'
-        return "o};O"
+        return "\eo};\eO"
     " match enum, struct or union
     elseif line =~ '\(enum\|struct\|union\)' && line !~ '[{}]$' && EOL()
         echom 'enum|struct'
-        return " {o};kO"
+        return " {\eo};\r\ekO"
     " match include macro
     elseif line =~ '^#include\s\+\S\+\s*$' && line !~ '\(<.*>\|".*"\)'
         echom 'include'
@@ -138,7 +138,7 @@ function s:ExpandStatement() "{{{
         echo newLine
         call setline('.', newLine)
         call cursor(0, col('$'))
-        return ''
+        return "\r"
     " match function definition
     elseif line =~ '^\w\+\s\+\w\+' && line !~ '[{;]$' && EOL()
         echom 'function ' . line
@@ -146,22 +146,20 @@ function s:ExpandStatement() "{{{
         echom line !~ '[{;]\s*$'
         echom EOL()
         if line =~ ')\s*$'
-            return " {o}kO"
+            return " {\eo}\r\ekO"
         else
             let second = substitute(line, '^\w\+\s\+\(\w\+\).*$','\1','')
             if second == 'main'
-                return "(int argc, char *argv[]) {o}kO"
+                return "(int argc, char *argv[]) {\eo}\r\ekO"
             else
-                return "() {o}kO"
+                return "() {\eo}\r\ekO"
             endif
         endif
     else
         echom 'unmatched ' . line
     endif
-    return s:EndLine("")
+    return s:EndLine("\r")
 endfunction " }}}
-
-au BufNewFile *.h r ~/.vim/templates/c_header.h
 
 " {{{ Maps and abbreviations
 inoremap <expr> <silent> <Plug>EndLineEsc  <SID>EndLine("<Esc>")
@@ -184,3 +182,4 @@ abb <expr> <buffer> if FirstWord() ? "#if" : "if"
 abb <expr> <buffer> elif FirstWord() ? "#elif" : "elif"
 abb <expr> <buffer> else FirstWord() ? "#else" : "else"
 " }}}
+"  vim: fdm=marker
