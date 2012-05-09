@@ -83,7 +83,7 @@ function! InExpandStatement() "{{{
 endfunction "}}}
 
 function! s:EndLine(key) "{{{
-    echom 'endlin' a:key
+    echom 'endline' a:key
     let saveCursor = getpos('.')
     " Search backwards to open brace that isn't in a string
     let prevBrace = searchpair('{', '', '}', 'bW', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string"')
@@ -218,7 +218,8 @@ function! s:ExpandStatement() "{{{
 endfunction " }}}
 
 function! s:BackspaceHandler() "{{{
-    if getline('.') == "// "
+    echom 'bs' '"'.getline('.').'"'
+    if getline('.') == "//"
         call setline(line('.'), "")
     endif
     return ""
@@ -229,9 +230,9 @@ endfunction "}}}
 inoremap <expr> <silent> <Plug>EndLineEsc  <SID>EndLine("<Esc>")
 inoremap <silent> <Plug>ExpandStatement  <C-R>=<SID>ExpandStatement()<CR>
 inoremap <silent> <Plug>BackspaceHandler  <C-R>=<SID>BackspaceHandler()<CR>
-" uses imap to call itself; forces abbreviations next to the cursor to be
-" expanded
-imap <buffer> <ESC> <Esc><Plug>EndLineEsc
+" Expand abbreviations next to cursor using:
+" <Space><bs>
+imap <buffer> <ESC> <Space><bs><Plug>EndLineEsc
 imap <buffer> <CR> <Space><bs><Plug>ExpandStatement
 imap <buffer> <BS> <BS><Plug>BackspaceHandler
 
