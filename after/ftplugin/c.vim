@@ -1,14 +1,14 @@
-function SyntaxName(l, c, ...) "{{{
+function! SyntaxName(l, c, ...) "{{{
     let trans = a:0 > 0 ? a:1 : 0
     return synIDattr(synID(a:l, a:c, trans), 'name')
 endfunction "}}}
 
-function FirstWord() "{{{
+function! FirstWord() "{{{
     let t = getline('.') =~ '^\w\+$'
     return t
 endfunction "}}}
 
-function InComment() " {{{
+function! InComment() " {{{
     let syn = SyntaxName(line('.'), col('.') - 1, 1)
     if syn =~? 'comment'
         return 1
@@ -17,7 +17,7 @@ function InComment() " {{{
     endif
 endfunction "}}}
 
-function EOL() "{{{
+function! EOL() "{{{
     if col('.') == col('$')
         return 1
     else
@@ -25,27 +25,27 @@ function EOL() "{{{
     endif
 endfunction "}}}
 
-function BlankLine() "{{{
+function! BlankLine() "{{{
     return getline('.') =~ '^\s*$'
 endfunction "}}}
 
-function AlreadyEnded() "{{{
+function! AlreadyEnded() "{{{
     return getline('.') =~ '[;,&|({[\]+\-*/%]$'
 endfunction "}}}
 
-function Macro() "{{{
+function! Macro() "{{{
     return getline('.') =~ '^#'
 endfunction "}}}
 
-function s:LocalFile(includeName) "{{{
+function! s:LocalFile(includeName) "{{{
     return glob(a:includeName) != ''
 endfunction "}}}
 
-function InExpandStatement() "{{{
+function! InExpandStatement() "{{{
     return getline('.') =~ '^\s*\(while\|for\|if\)'
 endfunction "}}}
 
-function s:EndLine(key) "{{{
+function! s:EndLine(key) "{{{
     let saveCursor = getpos('.')
     " Search backwards to open brace that isn't in a string
     let prevBrace = searchpair('{', '', '}', 'bW', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string"')
@@ -76,7 +76,7 @@ function s:EndLine(key) "{{{
     return a:key
 endfunction "}}}
 
-function s:ExpandStatement() "{{{
+function! s:ExpandStatement() "{{{
     echom 'es'
     let line = getline('.')
     " match logic statements
@@ -119,7 +119,11 @@ function s:ExpandStatement() "{{{
         return "\eo};\eO"
     " match enum, struct or union
     elseif line =~ '\(enum\|struct\|union\)' && line !~ '[{}]$' && EOL()
-        echom 'enum|struct'
+        echom 'enum|struct|union'
+        if line !~ 'enum\s*$'
+            let typedefLine = substitute(line, '^\(\s*\)\(enum\|struct\|union\)\s\+\(\w\+\).*', '\1typedef \2 \3 \3;', '')
+            call append(line('.') - 1, typedefLine)
+        endif
         return " {\eo};\r\ekO"
     " match include macro
     elseif line =~ '^#include\s\+\S\+\s*$' && line !~ '\(<.*>\|".*"\)'
@@ -139,9 +143,9 @@ function s:ExpandStatement() "{{{
         call setline('.', newLine)
         call cursor(0, col('$'))
         return "\r"
-    " match function definition
+    " match function! definition
     elseif line =~ '^\w\+\s\+\w\+' && line !~ '[{;]$' && EOL()
-        echom 'function ' . line
+        echom 'function! ' . line
         echom line =~ '^\w\+\s\+\w\+'
         echom line !~ '[{;]\s*$'
         echom EOL()
@@ -161,12 +165,24 @@ function s:ExpandStatement() "{{{
     return s:EndLine("\r")
 endfunction " }}}
 
+function! s:BackspaceHandler() "{{{
+    if getline('.') == "// "
+        call setline(line('.'), "")
+        return ""
+    else
+        return "\b"
+    endif
+endfunction "{{{
+
 " {{{ Maps and abbreviations
 inoremap <expr> <silent> <Plug>EndLineEsc  <SID>EndLine("<Esc>")
 imap <buffer> <ESC> <Plug>EndLineEsc
 
 inoremap <silent> <Plug>ExpandStatement  <C-R>=<SID>ExpandStatement()<CR>
 imap <buffer> <CR> <Plug>ExpandStatement
+
+inoremap <silent> <Plug>BackspaceHandler  <C-R>=<SID>BackspaceHandler()<CR>
+imap <buffer> <BS> <Plug>BackspaceHandler
 
 abb <expr> <buffer> is InComment() ? "is" : "=="
 abb <expr> <buffer> isnt InComment() ? "isnt" : "!="
