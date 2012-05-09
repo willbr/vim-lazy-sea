@@ -13,6 +13,38 @@ function! s:InFunction() "{{{
     return line =~ '\w\+\s*('
 endfunction "}}}
 
+function! s:MatchIf() "{{{
+    let line = getline('.')
+    return line =~ '^\s*if'
+endfunction "}}}
+
+function! s:MatchFor() "{{{
+    let line = getline('.')
+    return line =~ '^\s*for'
+endfunction "}}}
+
+function! s:MatchWhile() "{{{
+    let line = getline('.')
+    return line =~ '^\s*while'
+endfunction "}}}
+
+function! s:MatchSingleWordStatement() "{{{
+    let line = getline('.')
+    return line =~ '^\s\+\w\+$'
+endfunction "}}}
+
+function! s:MatchFunctionDefinition() "{{{
+    let line = getline('.')
+    return line =~ '^\S\+\s\+\S\+$' &&
+                \ line !~ '='
+endfunction "}}}
+
+function! s:MatchInclude() " {{{
+    let line = getline('.')
+    return line =~ '^#include\s\+\S\+\s*$' &&
+                \ line !~ '\(<.*>\|".*"\)'
+endfunction "}}}
+
 function! InComment() " {{{
     let syn = SyntaxName(line('.'), col('.') - 1, 1)
     if syn =~? 'comment'
@@ -51,6 +83,7 @@ function! InExpandStatement() "{{{
 endfunction "}}}
 
 function! s:EndLine(key) "{{{
+    echom 'endlin' a:key
     let saveCursor = getpos('.')
     " Search backwards to open brace that isn't in a string
     let prevBrace = searchpair('{', '', '}', 'bW', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string"')
@@ -85,13 +118,17 @@ function! s:ExpandStatement() "{{{
     echom 'es'
     let line = getline('.')
     " match logic statements
-    if InExpandStatement()
-        echom 'ies'
-        if line =~ '^\s*while$'
-            let newLine = substitute(line, '^\(\s*\w\+\)$', '\1 (1) {', '')
-        elseif line =~ '^\s*for$'
+    if s:MatchIf() "{{{
+        echom 'match if'
+        let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
+        call setline('.', newLine)
+        return "\eo}\eO"
+        "}}}
+    elseif s:MatchFor() "{{{
+        echom 'match for'
+        if line =~ '^\s*for$'
             let newLine = substitute(line, '^\(\s*\w\+\)$', '\1 (;;) {', '')
-        elseif line =~ '^\s*for'
+        else
             let forArgs = substitute(line, '^\s*\w\+\(.*\)$', '\1', '')
             let lineIndent = substitute(line, '^\(\s*\).*$', '\1', '')
             if forArgs =~ '\w\+\s\+in\s\+range'
@@ -113,15 +150,24 @@ function! s:ExpandStatement() "{{{
             else
                 let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
             endif
+        endif
+        call setline('.', newLine)
+        return "\eo}\eO"
+        " }}}
+    elseif s:MatchWhile() "{{{
+        echom 'match while'
+        if line =~ '^\s*while$'
+            let newLine = substitute(line, '^\(\s*\w\+\)$', '\1 (1) {', '')
         else
             let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
         endif
         call setline('.', newLine)
         return "\eo}\eO"
+        "}}}
     " match structure inizilization
     elseif line =~ '=\s*{\s*$'
         echom 'assign {'
-        return "\eo};\eO"
+            return "\eo};\eO"
     " match enum, struct or union
     elseif line =~ '\(enum\|struct\|union\)' && line !~ '[{}]$' && EOL()
         echom 'enum|struct|union'
@@ -131,7 +177,7 @@ function! s:ExpandStatement() "{{{
         endif
         return " {\eo};\r\ekO"
     " match include macro
-    elseif line =~ '^#include\s\+\S\+\s*$' && line !~ '\(<.*>\|".*"\)'
+    elseif s:MatchInclude() " {{{
         echom 'include'
         let includeName = substitute(line, '^#include\s\+\(\S\+\)\s*$', '\1', '')
         if includeName !~ '\.'
@@ -148,16 +194,23 @@ function! s:ExpandStatement() "{{{
         call setline('.', newLine)
         call cursor(0, col('$'))
         return "\r"
-    " match function! definition
-    elseif s:InFunction() && line !~ '[{;]$' && EOL()
+        "}}}
+    elseif s:MatchSingleWordStatement() "{{{
+        echom 'match single word statement'
+        return "();\r"
+    "}}}
+    elseif line =~ '^int main\(()\)\?$' "{{{
+        echom 'match int main'
+        return "(int argc, char *argv[]) {\eo}\r\ekO"
+        "}}}
+    elseif s:MatchFunctionDefinition() && EOL() "{{{
         echom 'function! ' . line
         if line =~ ')\s*$'
             return " {\eo}\r\ekO"
         else
             return "() {\eo}\r\ekO"
         endif
-    elseif line =~ '^int main$'
-        return "(int argc, char *argv[]) {\eo}\r\ekO"
+        "}}}
     else
         echom 'unmatched ' . line
     endif
@@ -178,8 +231,8 @@ inoremap <silent> <Plug>ExpandStatement  <C-R>=<SID>ExpandStatement()<CR>
 inoremap <silent> <Plug>BackspaceHandler  <C-R>=<SID>BackspaceHandler()<CR>
 " uses imap to call itself; forces abbreviations next to the cursor to be
 " expanded
-imap <buffer> <ESC> <ESC><Plug>EndLineEsc
-imap <buffer> <CR> <CR><BS><Plug>ExpandStatement
+imap <buffer> <ESC> <Esc><Plug>EndLineEsc
+imap <buffer> <CR> <Space><bs><Plug>ExpandStatement
 imap <buffer> <BS> <BS><Plug>BackspaceHandler
 
 iabb <expr> <buffer> is InComment() ? "is" : "=="
