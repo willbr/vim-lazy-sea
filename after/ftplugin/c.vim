@@ -263,8 +263,10 @@ endfunction " }}}
 
 function! s:BackspaceHandler() "{{{
     echom 'bs' '"'.getline('.').'"'
-    if getline('.') == "//"
-        call setline(line('.'), "")
+    let line = getline('.')
+    if line =~ "//$"
+        echom 'bs comment'
+        call setline(line('.'), substitute(line,'\(.*\)//\s\?$','\1',''))
     endif
     return ""
 endfunction "}}}
