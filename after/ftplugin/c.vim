@@ -15,17 +15,32 @@ endfunction "}}}
 
 function! s:MatchIf() "{{{
     let line = getline('.')
-    return line =~ '^\s*if'
+    return line =~ '^\s\+if'
+endfunction "}}}
+
+function! s:MatchElse() "{{{
+    let line = getline('.')
+    return line =~ '^\s\+else\s*$'
+endfunction "}}}
+
+function! s:MatchElseIf() "{{{
+    let line = getline('.')
+    return line =~ '^\s\+else if'
 endfunction "}}}
 
 function! s:MatchFor() "{{{
     let line = getline('.')
-    return line =~ '^\s*for'
+    return line =~ '^\s\+for'
 endfunction "}}}
 
 function! s:MatchWhile() "{{{
     let line = getline('.')
-    return line =~ '^\s*while'
+    return line =~ '^\s\+while'
+endfunction "}}}
+
+function! s:MatchDoWhile() "{{{
+    let line = getline('.')
+    return line =~ '^\s\+do while'
 endfunction "}}}
 
 function! s:MatchSingleWordStatement() "{{{
@@ -67,7 +82,7 @@ function! BlankLine() "{{{
 endfunction "}}}
 
 function! AlreadyEnded() "{{{
-    return getline('.') =~ '[;,&|({[\]+\-*/%]$'
+    return getline('.') =~ '[;,&|({+\-*/%]$'
 endfunction "}}}
 
 function! Macro() "{{{
@@ -129,12 +144,24 @@ endfunction "}}}
 function! s:ExpandStatement() "{{{
     echom 'es'
     let line = getline('.')
-    " match logic statements
-    if s:MatchIf() "{{{
+    if InComment() || line =~ ';$'
+        echom 'match comment or ;$'
+        return "\r"
+    elseif s:MatchIf() "{{{
         echom 'match if'
         let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
         call setline('.', newLine)
         return "\eo}\eO"
+        "}}}
+    elseif s:MatchElse() "{{{
+        echom 'match else'
+        return "\ebC} else {\r"
+        "}}}
+    elseif s:MatchElseIf() "{{{
+        echom 'match else if'
+        let newLine = substitute(line, '^\(\s*\)else if\s\+\(.*\)$', '\1else if (\2) {', '')
+        call setline('.', newLine)
+        return "\eI} \eo}\eO"
         "}}}
     elseif s:MatchFor() "{{{
         echom 'match for'
@@ -175,6 +202,14 @@ function! s:ExpandStatement() "{{{
         endif
         call setline('.', newLine)
         return "\eo}\eO"
+        "}}}
+    elseif s:MatchDoWhile() "{{{
+        echom 'match do'
+        let newLine = substitute(line, '^\(\s*\w\+\).*$', '\1 {', '')
+        let closeLine = substitute(line, '^\(\s*\)\w\+\s\+\w\+\s\+\(.*\)$', '\1} while (\2);', '')
+        call setline('.', newLine)
+        call append('.', closeLine)
+        return "\eo"
         "}}}
     " match structure inizilization
     elseif line =~ '=\s*{\s*$'
