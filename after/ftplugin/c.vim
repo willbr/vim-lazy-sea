@@ -35,7 +35,7 @@ endfunction "}}}
 
 function! s:MatchFunctionDefinition() "{{{
     let line = getline('.')
-    return line =~ '^\S\+\s\+\S\+$' &&
+    return line =~ '^\S\+\s\+\S\+' &&
                 \ line !~ '='
 endfunction "}}}
 
@@ -78,24 +78,36 @@ function! s:LocalFile(includeName) "{{{
     return glob(a:includeName) != ''
 endfunction "}}}
 
-function! InExpandStatement() "{{{
-    return getline('.') =~ '^\s*\(while\|for\|if\)'
+function!  s:NextLineClosesStructure() "{{{
+    echom 'next line closes structure?'
+    " let nextLine = getline(line('.') + 1)
+    let nextLine = getline(nextnonblank(line('.') + 1))
+    echom nextLine
+    return nextLine =~ '^};$'
+endfunction "}}}
+
+function! s:InsideStructure() "{{{
+    let saveCursor = getpos('.')
+    let r = 0
+    " Search backwards to open brace that isn't in a string
+    let prevBrace = searchpair('{', '', '}', 'bW', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string"')
+    if prevBrace
+        let braceLine = getline(prevBrace)
+        if braceLine =~ '=\s\+{' || braceLine =~ '\(enum\|structure\|union\)'
+            let r = 1
+        endif
+    endif
+    call setpos('.', saveCursor)
+    return r
 endfunction "}}}
 
 function! s:EndLine(key) "{{{
     echom 'endline' a:key
-    let saveCursor = getpos('.')
-    " Search backwards to open brace that isn't in a string
-    let prevBrace = searchpair('{', '', '}', 'bW', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string"')
 
     let eolChar = ';'
-    if prevBrace
-        let braceLine = getline(prevBrace)
-        if braceLine =~ '=\s\+{' || braceLine =~ "enum"
-            let eolChar = ','
-        endif
+    if s:InsideStructure()
+        let eolChar = ','
     endif
-    call setpos('.', saveCursor)
 
     if a:key == "\r"
         if InComment() || AlreadyEnded() || BlankLine() || Macro()
@@ -103,8 +115,8 @@ function! s:EndLine(key) "{{{
         else
             return eolChar . a:key
         endif
-    elseif a:key == "\e" " <Esc>
-        if InComment() || AlreadyEnded() || BlankLine() || !EOL() || Macro()
+    elseif a:key == "\e"
+        if InComment() || AlreadyEnded() || BlankLine() || !EOL() || Macro() || s:NextLineClosesStructure()
             return a:key
         else
             return eolChar . a:key
@@ -178,7 +190,7 @@ function! s:ExpandStatement() "{{{
         return " {\eo};\r\ekO"
     " match include macro
     elseif s:MatchInclude() " {{{
-        echom 'include'
+        echom 'match include'
         let includeName = substitute(line, '^#include\s\+\(\S\+\)\s*$', '\1', '')
         if includeName !~ '\.'
             let includeName = includeName . '.h'
@@ -188,14 +200,11 @@ function! s:ExpandStatement() "{{{
         else
             let newLine = "#include <" . includeName . ">"
         endif
-        echo line
-        echo includeName
-        echo newLine
         call setline('.', newLine)
         call cursor(0, col('$'))
         return "\r"
         "}}}
-    elseif s:MatchSingleWordStatement() "{{{
+    elseif s:MatchSingleWordStatement() && !s:InsideStructure() "{{{
         echom 'match single word statement'
         return "();\r"
     "}}}
