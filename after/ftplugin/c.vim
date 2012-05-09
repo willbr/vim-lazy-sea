@@ -8,6 +8,11 @@ function! FirstWord() "{{{
     return t
 endfunction "}}}
 
+function! s:InFunction() "{{{
+    let line = getline('.')
+    return line =~ '\w\+\s*('
+endfunction "}}}
+
 function! InComment() " {{{
     let syn = SyntaxName(line('.'), col('.') - 1, 1)
     if syn =~? 'comment'
@@ -144,21 +149,15 @@ function! s:ExpandStatement() "{{{
         call cursor(0, col('$'))
         return "\r"
     " match function! definition
-    elseif line =~ '^\w\+\s\+\w\+' && line !~ '[{;]$' && EOL()
+    elseif s:InFunction() && line !~ '[{;]$' && EOL()
         echom 'function! ' . line
-        echom line =~ '^\w\+\s\+\w\+'
-        echom line !~ '[{;]\s*$'
-        echom EOL()
         if line =~ ')\s*$'
             return " {\eo}\r\ekO"
         else
-            let second = substitute(line, '^\w\+\s\+\(\w\+\).*$','\1','')
-            if second == 'main'
-                return "(int argc, char *argv[]) {\eo}\r\ekO"
-            else
-                return "() {\eo}\r\ekO"
-            endif
+            return "() {\eo}\r\ekO"
         endif
+    elseif line =~ '^int main$'
+        return "(int argc, char *argv[]) {\eo}\r\ekO"
     else
         echom 'unmatched ' . line
     endif
@@ -168,34 +167,36 @@ endfunction " }}}
 function! s:BackspaceHandler() "{{{
     if getline('.') == "// "
         call setline(line('.'), "")
-        return ""
-    else
-        return "\b"
     endif
-endfunction "{{{
+    return ""
+endfunction "}}}
 
 " {{{ Maps and abbreviations
+"
 inoremap <expr> <silent> <Plug>EndLineEsc  <SID>EndLine("<Esc>")
-imap <buffer> <ESC> <Plug>EndLineEsc
-
 inoremap <silent> <Plug>ExpandStatement  <C-R>=<SID>ExpandStatement()<CR>
-imap <buffer> <CR> <Plug>ExpandStatement
-
 inoremap <silent> <Plug>BackspaceHandler  <C-R>=<SID>BackspaceHandler()<CR>
-imap <buffer> <BS> <Plug>BackspaceHandler
+" uses imap to call itself; forces abbreviations next to the cursor to be
+" expanded
+imap <buffer> <ESC> <ESC><Plug>EndLineEsc
+imap <buffer> <CR> <CR><BS><Plug>ExpandStatement
+imap <buffer> <BS> <BS><Plug>BackspaceHandler
 
-abb <expr> <buffer> is InComment() ? "is" : "=="
-abb <expr> <buffer> isnt InComment() ? "isnt" : "!="
-abb <expr> <buffer> not InComment() ? "not" : "!"
-abb <expr> <buffer> and InComment() ? "and" : "&&"
-abb <expr> <buffer> or InComment() ? "or" : "\|\|"
+iabb <expr> <buffer> is InComment() ? "is" : "=="
+iabb <expr> <buffer> isnt InComment() ? "isnt" : "!="
+iabb <expr> <buffer> not InComment() ? "not" : "!"
+iabb <expr> <buffer> and InComment() ? "and" : "&&"
+iabb <expr> <buffer> or InComment() ? "or" : "\|\|"
 
-abb <expr> <buffer> include FirstWord() ? "#include" : "include"
-abb <expr> <buffer> define FirstWord() ? "#define" : "define"
-abb <expr> <buffer> ifndef FirstWord() ? "#ifndef" : "ifndef"
-abb <expr> <buffer> undef FirstWord() ? "#undef" : "undef"
-abb <expr> <buffer> if FirstWord() ? "#if" : "if"
-abb <expr> <buffer> elif FirstWord() ? "#elif" : "elif"
-abb <expr> <buffer> else FirstWord() ? "#else" : "else"
+iabb <expr> <buffer> null InComment() ? "null" : "NULL"
+iabb <expr> <buffer> eof InComment() ? "eof" : "EOF"
+
+iabb <expr> <buffer> include FirstWord() ? "#include" : "include"
+iabb <expr> <buffer> define FirstWord() ? "#define" : "define"
+iabb <expr> <buffer> ifndef FirstWord() ? "#ifndef" : "ifndef"
+iabb <expr> <buffer> undef FirstWord() ? "#undef" : "undef"
+iabb <expr> <buffer> if FirstWord() ? "#if" : "if"
+iabb <expr> <buffer> elif FirstWord() ? "#elif" : "elif"
+iabb <expr> <buffer> else FirstWord() ? "#else" : "else"
 " }}}
 "  vim: fdm=marker
