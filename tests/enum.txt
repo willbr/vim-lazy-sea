@@ -1,0 +1,10 @@
+enum boolean
+NO
+YES<ESC>
+%
+typedef enum boolean boolean;
+enum boolean {
+    NO,
+    YES
+};
+

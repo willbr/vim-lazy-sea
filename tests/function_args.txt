@@ -1,0 +1,7 @@
+void push(double f)
+
+%
+void push(double f) {
+
+}
+

@@ -1,0 +1,12 @@
+union u_tag
+int ival
+float fval
+char *sval<ESC>
+%
+typedef union u_tag u_tag;
+union u_tag {
+    int ival;
+    float fval;
+    char *sval;
+};
+

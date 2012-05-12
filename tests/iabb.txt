@@ -1,0 +1,3 @@
+is isnt not and or null eof
+%
+== != ! && || NULL EOF

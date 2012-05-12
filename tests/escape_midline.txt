@@ -1,0 +1,3 @@
+char *newl, *news<LEFT><ESC>
+%
+char *newl, *news

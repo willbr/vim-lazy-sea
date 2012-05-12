@@ -1,0 +1,10 @@
+struct point
+int x
+int y<ESC>
+%
+typedef struct point point;
+struct point {
+    int x;
+    int y;
+};
+

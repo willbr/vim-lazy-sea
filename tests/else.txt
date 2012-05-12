@@ -1,0 +1,10 @@
+    if 1 == 1
+reset
+else
+reset<ESC>
+%
+    if (1 == 1) {
+        reset();
+    } else {
+        reset();
+    }
