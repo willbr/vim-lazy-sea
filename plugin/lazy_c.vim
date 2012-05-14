@@ -219,8 +219,8 @@ function! s:ExpandStatement(key) "{{{
         Log "match else if"
         let newLine = substitute(line, '^\(\s*\)else if\s\+\(.*\)$', '\1else if (\2) {', '')
         call setline('.', newLine)
-        let mainAction =  "\eI} \eo}\e"
-        let endAction =  "O"
+        let mainAction =  "\eI} \e"
+        let endAction =  "o"
         "}}}
     elseif s:MatchFor() "{{{
         Log "match for"

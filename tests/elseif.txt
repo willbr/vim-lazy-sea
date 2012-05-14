@@ -1,0 +1,14 @@
+int test()
+if a is 5
+one
+else if b is 5
+two<ESC>
+%
+int test() {
+    if (a == 5) {
+        one();
+    } else if (b == 5) {
+        two();
+    }
+}
+
