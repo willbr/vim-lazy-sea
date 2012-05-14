@@ -5,10 +5,17 @@ endif
 let g:loaded_lazy_c = 1
 
 let s:pluginDir = expand("<sfile>:p:h:h")
+let s:logging = 1
 
 inoremap <silent> <Plug>ExpandStatementESC <C-R>=<SID>ExpandStatement("\e")<CR>
 inoremap <silent> <Plug>ExpandStatementCR <C-R>=<SID>ExpandStatement("\r")<CR>
 inoremap <silent> <Plug>BackspaceHandler <C-R>=<SID>BackspaceHandler()<CR>
+
+function! s:log(str) "{{{
+    if exists("s:logging")
+        echom a:str
+    endif
+endfunction "}}}
 
 function! lazy_c#mappings() "{{{
     " Expand abbreviations next to cursor using:
@@ -31,7 +38,6 @@ function! lazy_c#mappings() "{{{
     iabb <expr> <buffer> ifndef <SID>FirstWord() ? "#ifndef" : "ifndef"
     iabb <expr> <buffer> undef <SID>FirstWord() ? "#undef" : "undef"
     iabb <expr> <buffer> if <SID>FirstWord() ? "#if" : "if"
-    iabb <expr> <buffer> elif <SID>FirstWord() ? "#elif" : "elif"
     iabb <expr> <buffer> else <SID>FirstWord() ? "#else" : "else"
 endfunction "}}}
 
@@ -97,6 +103,7 @@ endfunction "}}}
 function! s:MatchFunctionDefinition() "{{{
     let line = getline('.')
     return line =~ '^\S\+\s\+\S\+' &&
+                \ line =~ '(.*)' &&
                 \ line !~ '='
 endfunction "}}}
 
@@ -156,6 +163,7 @@ function! s:InsideWhat() "{{{
 endfunction "}}}
 
 function! s:EndLine(key) "{{{
+    Log "EndLine " . a:key
     let eolChar = ';'
     let insideEnum = s:InsideEnum()
     if insideEnum
@@ -164,44 +172,55 @@ function! s:EndLine(key) "{{{
 
     if a:key == "\r"
         if s:InComment() || s:AlreadyEnded() || s:BlankLine() || s:Macro()
+            Log a:key
             return a:key
         else
+            Log eolChar . a:key
             return eolChar . a:key
         endif
     elseif a:key == "\e"
         if s:InComment() || s:AlreadyEnded() || s:BlankLine() || !s:EOL() || s:Macro() || (s:NextLineClosesDataStructure() && insideEnum)
+            Log a:key
             return a:key
         else
+            Log eolChar . a:key
             return eolChar . a:key
         endif
     endif
-    echom 'unknown key ' . a:key
+    Log 'unknown key ' . a:key
     return a:key
 endfunction "}}}
 
 function! s:ExpandStatement(key) "{{{
+    Log "ExpandStatement " . a:key
     let line = getline('.')
     let mainAction = ""
     let endAction = ""
-    if s:InComment() || line =~ ';$'
-        return "\r"
+    if s:InComment()
+        Log "match Comment"
+    elseif line =~ ';$'
+        Log "match ';$'"
     elseif s:MatchIf() "{{{
+        Log "match if"
         let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
         call setline('.', newLine)
         let mainAction = "\eo}\e"
         let endAction = "O"
         "}}}
     elseif s:MatchElse() "{{{
+        Log "match else"
         let mainAction = "\ebC} else {"
         let endAction = "\r"
         "}}}
     elseif s:MatchElseIf() "{{{
+        Log "match else if"
         let newLine = substitute(line, '^\(\s*\)else if\s\+\(.*\)$', '\1else if (\2) {', '')
         call setline('.', newLine)
         let mainAction =  "\eI} \eo}\e"
         let endAction =  "O"
         "}}}
     elseif s:MatchFor() "{{{
+        Log "match for"
         if line =~ '^\s*for$'
             let newLine = substitute(line, '^\(\s*\w\+\)$', '\1 (;;) {', '')
         else
@@ -232,6 +251,7 @@ function! s:ExpandStatement(key) "{{{
         let endAction = "O"
         " }}}
     elseif s:MatchWhile() "{{{
+        Log "match while"
         if line =~ '^\s*while$'
             let newLine = substitute(line, '^\(\s*\w\+\)$', '\1 (1) {', '')
         else
@@ -242,18 +262,21 @@ function! s:ExpandStatement(key) "{{{
         let endAction = "O"
         "}}}
     elseif s:MatchDoWhile() "{{{
+        Log "match do while"
         let newLine = substitute(line, '^\(\s*\w\+\).*$', '\1 {', '')
         let closeLine = substitute(line, '^\(\s*\)\w\+\s\+\w\+\s\+\(.*\)$', '\1} while (\2);', '')
         call setline('.', newLine)
         call append('.', closeLine)
         let endAction = "\eo"
         "}}}
-    " match structure inizilization
-    elseif line =~ '=\s*{\s*$'
+    " match structure initialization
+    elseif line =~ '=\s*{{\s*$'
+        Log "match initialization"
         let mainAction = "\eo};\e"
         let endAction = "O"
     " match enum, struct or union
     elseif line =~ '\(enum\|struct\|union\)' && line !~ '[{}]$' && s:EOL()
+        Log "match enum|struct|union"
         if line !~ 'enum\s*$'
             let typedefLine = substitute(line, '^\(\s*\)\(enum\|struct\|union\)\s\+\(\w\+\).*', '\1typedef \2 \3 \3;', '')
             call append(line('.') - 1, typedefLine)
@@ -262,6 +285,7 @@ function! s:ExpandStatement(key) "{{{
         let endAction = "O"
     " match include macro
     elseif s:MatchInclude() " {{{
+        Log "match #include"
         let includeName = substitute(line, '^#include\s\+\(\S\+\)\s*$', '\1', '')
         if includeName !~ '\.'
             let includeName = includeName . '.h'
@@ -276,27 +300,30 @@ function! s:ExpandStatement(key) "{{{
         let endAction = "\r"
         "}}}
     elseif s:MatchSingleWordStatement() && !s:InsideDataStructure() "{{{
+        Log "match single word statement"
         let mainAction = "();"
         let endAction = "\r"
     "}}}
     elseif line =~ '^int main\(()\)\?$' "{{{
+        Log "match int main"
         let mainAction = "(int argc, char *argv[]) {\eo}\r\ek"
         let endAction = "O"
         "}}}
     elseif s:MatchFunctionDefinition() && s:EOL() "{{{
-        if line =~ ')\s*$'
-            let mainAction = " {\eo}\r\ek"
-        else
-            let mainAction = "() {\eo}\r\ek"
-        endif
+        Log "match function definition"
+        let mainAction = " {\eo}\r\ek"
         let endAction = "O"
         "}}}
     else
-        echom 'unmatched ' . line
+        Log 'unmatched ' . line
     endif
+
+    Log "end if else switches"
     if mainAction == ""
+        Log "mainAction empty"
         return s:EndLine(a:key)
     else
+        Log "key " . a:key
         if a:key == "\r"
             return mainAction . endAction
         else
@@ -307,8 +334,6 @@ endfunction " }}}
 
 function! s:BackspaceHandler() "{{{
     let line = getline('.')
-    echom '<BS>'
-    echom line
     if line =~ "//$"
         call setline(line('.'), substitute(line,'\(.*\)//\s\?$','\1',''))
     endif

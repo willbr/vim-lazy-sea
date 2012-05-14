@@ -1,7 +1,5 @@
 double pop
 
 %
-double pop() {
-
-}
+double pop;
 
