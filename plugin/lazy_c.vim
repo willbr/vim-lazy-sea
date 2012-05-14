@@ -103,6 +103,16 @@ function! s:MatchDoWhile() "{{{
     return line =~ '^\s\+do while'
 endfunction "}}}
 
+function! s:MatchSwitch() "{{{
+    let line = getline('.')
+    return line =~ '^\s\+switch'
+endfunction "}}}
+
+function! s:MatchCase() "{{{
+    let line = getline('.')
+    return line =~ '^\s\+\(case\|default\)'
+endfunction "}}}
+
 function! s:MatchSingleWordStatement() "{{{
     let line = getline('.')
     return line =~ '^\s\+\w\+$'
@@ -277,13 +287,25 @@ function! s:ExpandStatement(key) "{{{
         call append('.', closeLine)
         let endAction = "\eo"
         "}}}
+    elseif s:MatchSwitch() "{{{
+        Log "match switch"
+        let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
+        call setline('.', newLine)
+        let mainAction = "\eo}\e"
+        let endAction = "O"
+        "}}}
+    elseif s:MatchCase() " {{{
+        let mainAction = ":"
+        let endAction = "\r"
+        "}}}
     " match structure initialization
-    elseif line =~ '=\s*{{\s*$'
+    elseif line =~ '=\s*{{\s*$' "{{{
         Log "match initialization"
         let mainAction = "\eo};\e"
         let endAction = "O"
+        "}}}
     " match enum, struct or union
-    elseif line =~ '\(enum\|struct\|union\)' && line !~ '[{}]$' && s:EOL()
+    elseif line =~ '\(enum\|struct\|union\)' && line !~ '[{}]$' && s:EOL() "{{{
         Log "match enum|struct|union"
         if line !~ 'enum\s*$'
             let typedefLine = substitute(line, '^\(\s*\)\(enum\|struct\|union\)\s\+\(\w\+\).*', '\1typedef \2 \3 \3;', '')
@@ -291,11 +313,13 @@ function! s:ExpandStatement(key) "{{{
         endif
         let mainAction = " {\eo};\r\ek"
         let endAction = "O"
+        "}}}
     " match include macro
     elseif s:MatchDefineConst() " {{{
         Log "match #define <CONST>"
         let newLine = substitute(line, '^\(#define \)\(\w\+\)\s', '\1\U\2 ', '')
         call setline('.', newLine)
+        "}}}
     elseif s:MatchInclude() " {{{
         Log "match #include"
         let includeName = substitute(line, '^#include\s\+\(\S\+\)\s*$', '\1', '')
@@ -313,7 +337,14 @@ function! s:ExpandStatement(key) "{{{
         "}}}
     elseif s:MatchSingleWordStatement() && !s:InsideDataStructure() "{{{
         Log "match single word statement"
-        let mainAction = "();"
+        Log line
+        if line =~ '\(break\|continue\)'
+            Log "break \| continue"
+            let mainAction = ";"
+        else
+            Log "NOT break \| continue"
+            let mainAction = "();"
+        endif
         let endAction = "\r"
     "}}}
     elseif line =~ '^int main\(()\)\?$' "{{{
@@ -328,8 +359,9 @@ function! s:ExpandStatement(key) "{{{
         let mainAction = " {\eo}\r\ek"
         let endAction = "O"
         "}}}
-    else
+    else "{{{
         Log 'unmatched ' . line
+        "}}}
     endif
 
     Log "end if else switches"
@@ -354,8 +386,7 @@ function! s:BackspaceHandler() "{{{
     return ""
 endfunction "}}}
 
-" ==================================================
-" Testing Functions
+" Testing Functions {{{
 
 function! s:ClearBuffer()
     normal ggdG
@@ -438,5 +469,7 @@ function! s:RunTest(input, expectedOutput)
     let buffer = getline(0, line('$'))
     return [buffer ==# a:expectedOutput, buffer]
 endfunction
+
+"}}}
 
 "  vim: fdm=marker
