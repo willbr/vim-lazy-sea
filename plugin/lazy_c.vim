@@ -68,6 +68,11 @@ function! s:InComment() " {{{
     endif
 endfunction "}}}
 
+function! s:MatchDefineConst() "{{{
+    let line = getline('.')
+    return line =~ '^#define \w\+\s'
+endfunction "}}}
+
 function! s:MatchIf() "{{{
     let line = getline('.')
     return line =~ '^\s\+if'
@@ -287,6 +292,10 @@ function! s:ExpandStatement(key) "{{{
         let mainAction = " {\eo};\r\ek"
         let endAction = "O"
     " match include macro
+    elseif s:MatchDefineConst() " {{{
+        Log "match #define <CONST>"
+        let newLine = substitute(line, '^\(#define \)\(\w\+\)\s', '\1\U\2 ', '')
+        call setline('.', newLine)
     elseif s:MatchInclude() " {{{
         Log "match #include"
         let includeName = substitute(line, '^#include\s\+\(\S\+\)\s*$', '\1', '')
@@ -427,7 +436,7 @@ function! s:RunTest(input, expectedOutput)
     \ '<ESC>', "\<ESC>", 'g'),
     \ '<LEFT>', "\<LEFT>", 'g')
     let buffer = getline(0, line('$'))
-    return [buffer == a:expectedOutput, buffer]
+    return [buffer ==# a:expectedOutput, buffer]
 endfunction
 
 "  vim: fdm=marker
