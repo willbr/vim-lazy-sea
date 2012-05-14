@@ -309,6 +309,8 @@ function! s:ExpandStatement(key) "{{{
     "}}}
     elseif line =~ '^int main\(()\)\?$' "{{{
         Log "match int main"
+        let newLine = substitute(line, '()$', '', '')
+        call setline('.', newLine)
         let mainAction = "(int argc, char *argv[]) {\eo}\r\ek"
         let endAction = "O"
         "}}}
