@@ -39,6 +39,9 @@ function! lazy_c#mappings() "{{{
     iabb <expr> <buffer> undef <SID>FirstWord() ? "#undef" : "undef"
     iabb <expr> <buffer> if <SID>FirstWord() ? "#if" : "if"
     iabb <expr> <buffer> else <SID>FirstWord() ? "#else" : "else"
+    if exists("s:logging")
+        command! -nargs=1 Log call <SID>log(<args>)
+    endif
 endfunction "}}}
 
 function! s:SyntaxName(l, c, ...) "{{{
