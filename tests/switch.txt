@@ -1,12 +1,7 @@
     switch c = getch()
-case 'a'
-one
-break
-case 'b'
-two
-break
-default
-three<ESC>
+'a'
+one<ESC>jocase 'b'
+two<ESC>jjothree<ESC>
 %
     switch (c = getch()) {
         case 'a':
@@ -17,4 +12,5 @@ three<ESC>
             break;
         default:
             three();
+            break;
     }

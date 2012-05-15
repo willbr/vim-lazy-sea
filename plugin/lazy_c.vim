@@ -144,7 +144,9 @@ function! s:BlankLine() "{{{
 endfunction "}}}
 
 function! s:AlreadyEnded() "{{{
-    return getline('.') =~ '[;,&|({+\-*/%]$'
+    let line = getline('.')
+    return line =~ '[;,&|({+\-*/%]$' &&
+                \ line !~ '\(--\|++\)$' 
 endfunction "}}}
 
 function! s:Macro() "{{{
@@ -291,12 +293,12 @@ function! s:ExpandStatement(key) "{{{
         Log "match switch"
         let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
         call setline('.', newLine)
-        let mainAction = "\eo}\e"
-        let endAction = "O"
+        let mainAction = "\eodefault:\rbreak;\r}\ekk"
+        let endAction = "Ocase "
         "}}}
     elseif s:MatchCase() " {{{
-        let mainAction = ":"
-        let endAction = "\r"
+        let mainAction = ":\rbreak;\e"
+        let endAction = "O"
         "}}}
     " match structure initialization
     elseif line =~ '=\s*{{\s*$' "{{{
@@ -351,7 +353,7 @@ function! s:ExpandStatement(key) "{{{
         Log "match int main"
         let newLine = substitute(line, '()$', '', '')
         call setline('.', newLine)
-        let mainAction = "(int argc, char *argv[]) {\eo}\r\ek"
+        let mainAction = "(int argc, char *argv[]) {\rreturn 0;\r}\ek"
         let endAction = "O"
         "}}}
     elseif s:MatchFunctionDefinition() && s:EOL() "{{{
