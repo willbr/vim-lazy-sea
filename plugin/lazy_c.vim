@@ -224,8 +224,8 @@ function! s:ExpandStatement(key) "{{{
         Log "match if"
         let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
         call setline('.', newLine)
-        let mainAction = "\eo}\e"
-        let endAction = "O"
+        let mainAction = "\eo}\ek"
+        let endAction = "o"
         "}}}
     elseif s:MatchElse() "{{{
         Log "match else"
@@ -267,8 +267,8 @@ function! s:ExpandStatement(key) "{{{
             endif
         endif
         call setline('.', newLine)
-        let mainAction = "\eo}\e"
-        let endAction = "O"
+        let mainAction = "\eo}\ek"
+        let endAction = "o"
         " }}}
     elseif s:MatchWhile() "{{{
         Log "match while"
@@ -278,8 +278,8 @@ function! s:ExpandStatement(key) "{{{
             let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
         endif
         call setline('.', newLine)
-        let mainAction = "\eo}\e"
-        let endAction = "O"
+        let mainAction = "\eo}\ek"
+        let endAction = "o"
         "}}}
     elseif s:MatchDoWhile() "{{{
         Log "match do while"
@@ -293,23 +293,23 @@ function! s:ExpandStatement(key) "{{{
         Log "match switch"
         let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
         call setline('.', newLine)
-        let mainAction = "\eodefault:\rbreak;\r}\ekk"
-        let endAction = "Ocase "
+        let mainAction = "\eodefault:\rbreak;\r}\ekkk"
+        let endAction = "ocase "
         "}}}
     elseif s:MatchCase() " {{{
         let nextLine = getline(line('.')+1)
         if nextLine =~ '^\s\+break;'
-            let mainAction = ":\eObreak;\ejj"
+            let mainAction = ":\eObreak;\ej"
         else
-            let mainAction = ":\rbreak;\e"
+            let mainAction = ":\rbreak;\ek"
         endif
-        let endAction = "O"
+        let endAction = "o"
         "}}}
     " match structure initialization
     elseif line =~ '=\s*{{\s*$' "{{{
         Log "match initialization"
-        let mainAction = "\eo};\e"
-        let endAction = "O"
+        let mainAction = "\eo};\ek"
+        let endAction = "o"
         "}}}
     " match enum, struct or union
     elseif line =~ '\(enum\|struct\|union\)' && line !~ '[{}]$' && s:EOL() "{{{
@@ -318,8 +318,8 @@ function! s:ExpandStatement(key) "{{{
             let typedefLine = substitute(line, '^\(\s*\)\(enum\|struct\|union\)\s\+\(\w\+\).*', '\1typedef \2 \3 \3;', '')
             call append(line('.') - 1, typedefLine)
         endif
-        let mainAction = " {\eo};\r\ek"
-        let endAction = "O"
+        let mainAction = " {\eo};\r\ekk"
+        let endAction = "o"
         "}}}
     " match include macro
     elseif s:MatchDefineConst() " {{{
@@ -358,13 +358,13 @@ function! s:ExpandStatement(key) "{{{
         Log "match int main"
         let newLine = substitute(line, '()$', '', '')
         call setline('.', newLine)
-        let mainAction = "(int argc, char *argv[]) {\rreturn 0;\r}\ek"
-        let endAction = "O"
+        let mainAction = "(int argc, char *argv[]) {\rreturn 0;\r}\ekk"
+        let endAction = "o"
         "}}}
     elseif s:MatchFunctionDefinition() && s:EOL() "{{{
         Log "match function definition"
-        let mainAction = " {\eo}\r\ek"
-        let endAction = "O"
+        let mainAction = " {\eo}\r\ekk"
+        let endAction = "o"
         "}}}
     else "{{{
         Log 'unmatched ' . line
