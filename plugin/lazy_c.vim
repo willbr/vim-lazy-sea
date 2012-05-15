@@ -297,7 +297,12 @@ function! s:ExpandStatement(key) "{{{
         let endAction = "Ocase "
         "}}}
     elseif s:MatchCase() " {{{
-        let mainAction = ":\rbreak;\e"
+        let nextLine = getline(line('.')+1)
+        if nextLine =~ '^\s\+break;'
+            let mainAction = ":\eObreak;\ejj"
+        else
+            let mainAction = ":\rbreak;\e"
+        endif
         let endAction = "O"
         "}}}
     " match structure initialization
