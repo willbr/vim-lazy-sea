@@ -1,0 +1,16 @@
+    switch c = getch()
+'a'
+case 'b':
+one
+two<ESC>jjothree<ESC>
+%
+    switch (c = getch()) {
+        case 'a':
+        case 'b':
+            one();
+            two();
+            break;
+        default:
+            three();
+            break;
+    }

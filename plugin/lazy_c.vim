@@ -110,7 +110,7 @@ endfunction "}}}
 
 function! s:MatchCase() "{{{
     let line = getline('.')
-    return line =~ '^\s\+\(case\|default\)'
+    return line =~ '^\s\+\(case\|default\).*[^:]$'
 endfunction "}}}
 
 function! s:MatchSingleWordStatement() "{{{
@@ -145,7 +145,7 @@ endfunction "}}}
 
 function! s:AlreadyEnded() "{{{
     let line = getline('.')
-    return line =~ '[;,&|({+\-*/%]$' &&
+    return line =~ '[:;,&|({+\-*/%]$' &&
                 \ line !~ '\(--\|++\)$' 
 endfunction "}}}
 
