@@ -418,11 +418,50 @@ function! s:eputs(name, str)
 endfunction
 
 function! lazy_c#test()
-    set filetype=c
-    let successCount = 0
-    let failCount = 0
-    let failed = []
-    for f in split(glob( s:pluginDir . "/tests/*.txt"), "\n")
+    let s:successCount = 0
+    let s:failCount = 0
+    let s:failed = []
+    let s:debugMessages = []
+
+    for f in filter(split(glob( s:pluginDir . "/tests/*"), "\n"), 'isdirectory(v:val)')
+        call s:ParseTestDir(f)
+    endfor
+
+    call s:ClearBuffer()
+    call setline(1, "Lazy C Tests")
+    call s:puts(strftime("%c"))
+    call s:puts("")
+    if len(s:failed)
+        call s:puts("fails:")
+        for fail in s:failed
+            let [f, input, expectedOutput, output] = fail
+            call s:puts(f)
+            call s:eputs("input", input)
+            call s:eputs("expectedOutput", expectedOutput)
+            call s:eputs("output", output)
+            call s:puts("")
+        endfor
+        call s:puts("")
+    endif
+    call s:puts("failed: " . s:failCount)
+    call s:puts("succeeded: " . s:successCount)
+    call s:puts("total: " . (s:failCount + s:successCount))
+
+    if len(s:debugMessages)
+        call s:puts("")
+        for line in s:debugMessages
+            call s:puts(line)
+        endfor
+    endif
+
+    write! lazy_c_test.txt
+    exit
+endfunction
+
+function! s:ParseTestDir(folder)
+    let filetype = substitute(a:folder, '.*/\(.*\)$', '\1', '')
+    exec "setfiletype " . filetype
+    for f in split(glob( a:folder . "/*.txt"), "\n")
         let input = []
         let expectedOutput = []
         let splitFound = 0
@@ -437,34 +476,16 @@ function! lazy_c#test()
         endfor
         let [result, output] = s:RunTest(input, expectedOutput)
         if result == 1
-            let successCount += 1
+            let s:successCount += 1
         else
-            call add(failed, [f, input, expectedOutput, output])
-            let failCount += 1
+            call add(s:failed, [f, input, expectedOutput, output])
+            let s:failCount += 1
         endif
     endfor
+endfunction
 
-    call s:ClearBuffer()
-    call setline(1, "Lazy C Tests")
-    call s:puts(strftime("%c"))
-    call s:puts("")
-    if len(failed)
-        call s:puts("fails:")
-        for fail in failed
-            let [f, input, expectedOutput, output] = fail
-            call s:puts(f)
-            call s:eputs("input", input)
-            call s:eputs("expectedOutput", expectedOutput)
-            call s:eputs("output", output)
-            call s:puts("")
-        endfor
-        call s:puts("")
-    endif
-    call s:puts("failed: " . failCount)
-    call s:puts("succeeded: " . successCount)
-    call s:puts("total: " . (failCount + successCount))
-    write! lazy_c_test.txt
-    exit
+function! s:debugLog(msg)
+    call add(s:debugMessages, a:msg)
 endfunction
 
 function! s:RunTest(input, expectedOutput)
