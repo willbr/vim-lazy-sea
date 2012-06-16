@@ -1,1 +1,1 @@
-call lazy_c#mappings()
+call lazy_sea#c_mappings()

@@ -1,8 +1,8 @@
 
-if exists("g:loaded_lazy_c") || &cp
+if exists("g:loaded_lazy_sea") || &cp
     finish
 endif
-let g:loaded_lazy_c = 1
+let g:loaded_lazy_sea = 1
 
 let s:pluginDir = expand("<sfile>:p:h:h")
 let s:logging = 1
@@ -17,7 +17,7 @@ function! s:log(str) "{{{
     endif
 endfunction "}}}
 
-function! lazy_c#mappings() "{{{
+function! lazy_sea#c_mappings() "{{{
     " Expand abbreviations next to cursor using:
     " <Space><bs>
     imap <buffer> <ESC> <Space><bs><Plug>ExpandStatementESC
@@ -417,7 +417,7 @@ function! s:eputs(name, str)
     call append(line('$'), "end".a:name)
 endfunction
 
-function! lazy_c#test()
+function! lazy_sea#test()
     let s:successCount = 0
     let s:failCount = 0
     let s:failed = []
@@ -454,7 +454,7 @@ function! lazy_c#test()
         endfor
     endif
 
-    write! lazy_c_test.txt
+    write! lazy_sea_test.txt
     exit
 endfunction
 
