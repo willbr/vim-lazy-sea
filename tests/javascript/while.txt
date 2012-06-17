@@ -1,0 +1,6 @@
+    while (c=getchar()) != EOF
+
+%
+    while ((c=getchar()) != EOF) {
+
+    }
