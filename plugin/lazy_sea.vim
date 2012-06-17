@@ -14,6 +14,7 @@ function! s:log(str) "{{{
 endfunction "}}}
 
 command! -nargs=1 Log call <SID>log(<args>)
+command! -nargs=1 DebugLog call <SID>debugLog(<args>)
 
 function! lazy_sea#test() "{{{
     let s:successCount = 0
@@ -83,7 +84,6 @@ endfunction "}}}
 
 function! s:ParseTestDir(folder) "{{{
     let filetype = substitute(a:folder, '.*/\(.*\)$', '\1', '')
-    exec "setfiletype " . filetype
     for f in split(glob( a:folder . "/*.txt"), "\n")
         let input = []
         let expectedOutput = []
@@ -97,7 +97,10 @@ function! s:ParseTestDir(folder) "{{{
                 call add(expectedOutput, line)
             endif
         endfor
+        new
+        exec "setfiletype " . filetype
         let [result, output] = s:RunTest(input, expectedOutput)
+        quit!
         if result == 1
             let s:successCount += 1
         else
@@ -112,7 +115,6 @@ function! s:debugLog(msg) "{{{
 endfunction "}}}
 
 function! s:RunTest(input, expectedOutput) "{{{
-    call s:ClearBuffer()
     execute "normal i" . substitute(substitute(substitute(join(a:input, "\r"),
     \ '<BS>',"\<BS>",'g'),
     \ '<ESC>', "\<ESC>", 'g'),
