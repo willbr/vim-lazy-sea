@@ -94,8 +94,9 @@ endfunction "}}}
 
 function! s:MatchFunctionDefinition() "{{{
     let line = getline('.')
-    return line =~ 'function\s*$' &&
-                \ !s:AlreadyEnded()
+    return !s:AlreadyEnded() &&
+                \ line =~ 'function\s*$' ||
+                \ line =~ 'function\s*(.*)\s*$'
 endfunction "}}}
 
 function! s:MatchInclude() " {{{

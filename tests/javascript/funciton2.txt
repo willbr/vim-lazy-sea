@@ -1,0 +1,7 @@
+    app.drawStatusBar = function()
+
+%
+    app.drawStatusBar = function() {
+
+    }
+
