@@ -5,7 +5,7 @@ endif
 let g:loaded_lazy_sea = 1
 
 let s:pluginDir = expand("<sfile>:p:h:h")
-let s:logging = 1
+let s:logging = 0
 
 function! s:log(str) "{{{
     if exists("s:logging")

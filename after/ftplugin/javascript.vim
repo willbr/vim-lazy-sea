@@ -63,7 +63,8 @@ endfunction "}}}
 
 function! s:MatchFor() "{{{
     let line = getline('.')
-    return line =~ '^\s\+for'
+    return line =~ '^\s\+for' &&
+                \ line !~ '{'
 endfunction "}}}
 
 function! s:MatchWhile() "{{{
@@ -93,9 +94,7 @@ endfunction "}}}
 
 function! s:MatchFunctionDefinition() "{{{
     let line = getline('.')
-    return line =~ '^\S\+\s\+\S\+' &&
-                \ line =~ '(.*)' &&
-                \ line !~ '=' &&
+    return line =~ 'function\s*$' &&
                 \ !s:AlreadyEnded()
 endfunction "}}}
 
@@ -337,7 +336,11 @@ function! s:ExpandStatement(key) "{{{
         "}}}
     elseif s:MatchFunctionDefinition() && s:EOL() "{{{
         Log "match function definition"
-        let mainAction = " {\eo}\r\ekk"
+        if line =~ ')\s*$'
+            let mainAction = " {\eo}\r\ekk"
+        else
+            let mainAction = "() {\eo}\r\ekk"
+        endif
         let endAction = "o"
         "}}}
     else "{{{
