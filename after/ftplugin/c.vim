@@ -11,14 +11,14 @@ imap <buffer> <ESC> <Space><bs><Plug>ExpandStatementESC
 imap <buffer> <CR> <Space><bs><Plug>ExpandStatementCR
 imap <buffer> <BS> <BS><Plug>BackspaceHandler
 
-iabb <expr> <buffer> is <SID>InComment() ? "is" : "=="
-iabb <expr> <buffer> isnt <SID>InComment() ? "isnt" : "!="
-iabb <expr> <buffer> not <SID>InComment() ? "not" : "!"
-iabb <expr> <buffer> and <SID>InComment() ? "and" : "&&"
-iabb <expr> <buffer> or <SID>InComment() ? "or" : "\|\|"
+iabb <expr> <buffer> is <SID>InCommentOrString() ? "is" : "=="
+iabb <expr> <buffer> isnt <SID>InCommentOrString() ? "isnt" : "!="
+iabb <expr> <buffer> not <SID>InCommentOrString() ? "not" : "!"
+iabb <expr> <buffer> and <SID>InCommentOrString() ? "and" : "&&"
+iabb <expr> <buffer> or <SID>InCommentOrString() ? "or" : "\|\|"
 
-iabb <expr> <buffer> null <SID>InComment() ? "null" : "NULL"
-iabb <expr> <buffer> eof <SID>InComment() ? "eof" : "EOF"
+iabb <expr> <buffer> null <SID>InCommentOrString() ? "null" : "NULL"
+iabb <expr> <buffer> eof <SID>InCommentOrString() ? "eof" : "EOF"
 
 iabb <expr> <buffer> include <SID>FirstWord() ? "#include" : "include"
 iabb <expr> <buffer> define <SID>FirstWord() ? "#define" : "define"
@@ -42,9 +42,9 @@ function! s:InFunction() "{{{
     return line =~ '\w\+\s*('
 endfunction "}}}
 
-function! s:InComment() " {{{
+function! s:InCommentOrString() " {{{
     let syn = s:SyntaxName(line('.'), col('.') - 1, 1)
-    if syn =~? 'comment'
+    if syn =~? 'comment' || syn =~? 'string'
         return 1
     else
         return 0
@@ -174,7 +174,7 @@ function! s:EndLine(key) "{{{
     endif
 
     if a:key == "\r"
-        if s:InComment() || s:AlreadyEnded() || s:BlankLine() || s:Macro()
+        if s:InCommentOrString() || s:AlreadyEnded() || s:BlankLine() || s:Macro()
             Log a:key
             return a:key
         else
@@ -182,7 +182,7 @@ function! s:EndLine(key) "{{{
             return eolChar . a:key
         endif
     elseif a:key == "\e"
-        if s:InComment() || s:AlreadyEnded() || s:BlankLine() || !s:EOL() || s:Macro() || (s:NextLineClosesDataStructure() && insideEnum)
+        if s:InCommentOrString() || s:AlreadyEnded() || s:BlankLine() || !s:EOL() || s:Macro() || (s:NextLineClosesDataStructure() && insideEnum)
             Log a:key
             return a:key
         else
@@ -199,7 +199,7 @@ function! s:ExpandStatement(key) "{{{
     let line = getline('.')
     let mainAction = ""
     let endAction = ""
-    if s:InComment()
+    if s:InCommentOrString()
         Log "match Comment"
     elseif line =~ ';$'
         Log "match ';$'"

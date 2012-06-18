@@ -1,0 +1,5 @@
+    printf("This is in a string\n")
+
+%
+    printf("This is in a string\n");
+
