@@ -134,14 +134,9 @@ function!  s:NextLineClosesDataStructure() "{{{
     return nextLine =~ '^};$'
 endfunction "}}}
 
-function! s:InsideEnum() "{{{
+function! s:InsideObject() "{{{
     let braceLine = s:InsideWhat()
-    return braceLine =~ '^\s*enum'
-endfunction "}}}
-
-function! s:InsideDataStructure() "{{{
-    let braceLine = s:InsideWhat()
-    return braceLine =~ '\(enum\|union\|struct\)'
+    return braceLine =~ '=\s*{\s*$'
 endfunction "}}}
 
 function! s:InsideWhat() "{{{
@@ -156,8 +151,8 @@ endfunction "}}}
 function! s:EndLine(key) "{{{
     Log "EndLine " . a:key
     let eolChar = ';'
-    let insideEnum = s:InsideEnum()
-    if insideEnum
+    let insideObject = s:InsideObject()
+    if insideObject
         let eolChar = ','
     endif
 
@@ -170,7 +165,7 @@ function! s:EndLine(key) "{{{
             return eolChar . a:key
         endif
     elseif a:key == "\e"
-        if s:InComment() || s:AlreadyEnded() || s:BlankLine() || !s:EOL() || s:Macro() || (s:NextLineClosesDataStructure() && insideEnum)
+        if s:InComment() || s:AlreadyEnded() || s:BlankLine() || !s:EOL() || s:Macro() || (s:NextLineClosesDataStructure() && insideObject)
             Log a:key
             return a:key
         else
@@ -298,16 +293,6 @@ function! s:ExpandStatement(key) "{{{
         let mainAction = "\eo};\ek"
         let endAction = "o"
         "}}}
-    " match enum, struct or union
-    elseif line =~ '\(enum\|struct\|union\)' && line !~ '[{}]$' && s:EOL() "{{{
-        Log "match enum|struct|union"
-        if line !~ 'enum\s*$'
-            let typedefLine = substitute(line, '^\(\s*\)\(enum\|struct\|union\)\s\+\(\w\+\).*', '\1typedef \2 \3 \3;', '')
-            call append(line('.') - 1, typedefLine)
-        endif
-        let mainAction = " {\eo};\r\ekk"
-        let endAction = "o"
-        "}}}
     " match include macro
     elseif s:MatchDefineConst() " {{{
         Log "match #define <CONST>"
@@ -329,7 +314,7 @@ function! s:ExpandStatement(key) "{{{
         call cursor(0, col('$'))
         let endAction = "\r"
         "}}}
-    elseif s:MatchSingleWordStatement() && !s:InsideDataStructure() "{{{
+    elseif s:MatchSingleWordStatement() "{{{
         Log "match single word statement"
         Log line
         if line =~ '\(break\|continue\)'
