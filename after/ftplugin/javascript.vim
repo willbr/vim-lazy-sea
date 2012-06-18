@@ -189,6 +189,22 @@ function! s:ExpandStatement(key) "{{{
     let endAction = ""
     if s:InComment()
         Log "match Comment"
+    elseif line =~ '{\s*$' "{{{
+        Log "match {"
+        let saveCursor = getpos('.')
+        let closeBrace = searchpair('{', '', '}', 'W', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string"')
+        call setpos('.', saveCursor)
+
+        if !closeBrace
+            echom "closeBrace"
+            if line =~ '=\s*{\s*$'
+                let mainAction = "\eo};\ek"
+            else
+                let mainAction = "\eo}\ek"
+            endif
+            let endAction = "o"
+        endif
+        "}}}
     elseif s:AlreadyEnded()
         Log "match AlreadyEnded()"
     elseif s:MatchIf() "{{{
