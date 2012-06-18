@@ -143,7 +143,7 @@ endfunction "}}}
 function!  s:NextLineClosesDataStructure() "{{{
     " let nextLine = getline(line('.') + 1)
     let nextLine = getline(nextnonblank(line('.') + 1))
-    return nextLine =~ '^};$'
+    return nextLine =~ '^\s*};$'
 endfunction "}}}
 
 function! s:InsideEnum() "{{{
@@ -151,9 +151,15 @@ function! s:InsideEnum() "{{{
     return braceLine =~ '^\s*enum'
 endfunction "}}}
 
+function! s:InsideInitialization() "{{{
+    let braceLine = s:InsideWhat()
+    return braceLine =~ '=\s*{\s*$'
+endfunction "}}}
+
 function! s:InsideDataStructure() "{{{
     let braceLine = s:InsideWhat()
-    return braceLine =~ '\(enum\|union\|struct\)'
+    return braceLine =~ '\(enum\|union\|struct\)' ||
+                \ s:InsideInitialization()
 endfunction "}}}
 
 function! s:InsideWhat() "{{{
@@ -168,8 +174,8 @@ endfunction "}}}
 function! s:EndLine(key) "{{{
     Log "EndLine " . a:key
     let eolChar = ';'
-    let insideEnum = s:InsideEnum()
-    if insideEnum
+    let insideSomething = s:InsideEnum() || s:InsideInitialization()
+    if insideSomething
         let eolChar = ','
     endif
 
@@ -182,7 +188,7 @@ function! s:EndLine(key) "{{{
             return eolChar . a:key
         endif
     elseif a:key == "\e"
-        if s:InCommentOrString() || s:AlreadyEnded() || s:BlankLine() || !s:EOL() || s:Macro() || (s:NextLineClosesDataStructure() && insideEnum)
+        if s:InCommentOrString() || s:AlreadyEnded() || s:BlankLine() || !s:EOL() || s:Macro() || (s:NextLineClosesDataStructure() && insideSomething)
             Log a:key
             return a:key
         else
@@ -203,6 +209,32 @@ function! s:ExpandStatement(key) "{{{
         Log "match Comment"
     elseif line =~ ';$'
         Log "match ';$'"
+    elseif line =~ '{\s*$' "{{{
+        Log "match {"
+        let saveCursor = getpos('.')
+        let closeBrace = searchpair('{', '', '}', 'W', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string"')
+        call setpos('.', saveCursor)
+        
+        "check ident levels match
+        if closeBrace
+            let openIndent = substitute(line, '^\(\s*\).*$', '\1', '')
+            let closeLine = getline(closeBrace)
+            let closeIndent = substitute(closeLine, '^\(\s*\).*$', '\1', '')
+            if openIndent != closeIndent
+                let closeBrace = 0
+            endif
+        endif
+
+        if !closeBrace
+            echom "closeBrace"
+            if line =~ '=\s*{\s*$'
+                let mainAction = "\eo};\ek"
+            else
+                let mainAction = "\eo}\ek"
+            endif
+            let endAction = "o"
+        endif
+        "}}}
     elseif s:MatchIf() "{{{
         Log "match if"
         let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')

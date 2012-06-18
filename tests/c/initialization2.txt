@@ -1,0 +1,16 @@
+int main
+int areas[] = {
+10
+20
+30
+40<ESC>
+%
+int main(int argc, char *argv[]) {
+    int areas[] = {
+        10,
+        20,
+        30,
+        40
+    };
+    return 0;
+}
