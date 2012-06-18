@@ -1,6 +1,3 @@
-
-
-
 inoremap <silent> <Plug>ExpandStatementESC <C-R>=<SID>ExpandStatement("\e")<CR>
 inoremap <silent> <Plug>ExpandStatementCR <C-R>=<SID>ExpandStatement("\r")<CR>
 inoremap <silent> <Plug>BackspaceHandler <C-R>=<SID>BackspaceHandler()<CR>
@@ -119,7 +116,7 @@ endfunction "}}}
 
 function! s:AlreadyEnded() "{{{
     let line = getline('.')
-    return line =~ '[:;,&|({+\-*/%]$' &&
+    return line =~ '[:;,&|({+\-*/%]\s*$' &&
                 \ line !~ '\(--\|++\)$' 
 endfunction "}}}
 
@@ -192,8 +189,8 @@ function! s:ExpandStatement(key) "{{{
     let endAction = ""
     if s:InComment()
         Log "match Comment"
-    elseif line =~ ';$'
-        Log "match ';$'"
+    elseif s:AlreadyEnded()
+        Log "match AlreadyEnded()"
     elseif s:MatchIf() "{{{
         Log "match if"
         let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
@@ -337,7 +334,11 @@ function! s:ExpandStatement(key) "{{{
         "}}}
     elseif s:MatchFunctionDefinition() && s:EOL() "{{{
         Log "match function definition"
-        if line =~ ')\s*$'
+        if line =~ ',\s*function\s*(.*)\s*$'
+            let mainAction = " {\eo});\r\ekk"
+        elseif line =~ ',\s*function\s*$'
+            let mainAction = "() {\eo});\r\ekk"
+        elseif line =~ ')\s*$'
             let mainAction = " {\eo}\r\ekk"
         else
             let mainAction = "() {\eo}\r\ekk"
