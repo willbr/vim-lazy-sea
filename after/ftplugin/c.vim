@@ -164,6 +164,23 @@ function!  s:NextLineClosesDataStructure() "{{{
     return nextLine =~ '^\s*};$'
 endfunction "}}}
 
+function!  s:LineClosesFunction() "{{{
+    let line = getline('.')
+    if line =~ '^\s*}\s*$'
+        Log 'line ' . line
+        " move cursor before closing brace
+        let saveCursor = getpos('.')
+        let newCursor = getpos('.')
+        " set column to 0
+        let newCursor[2] = 0
+        call setpos('.', newCursor)
+        let inFunc = s:InsideFunction()
+        call setpos('.', saveCursor)
+        Log 'in func '. inFunc
+        return inFunc
+    endif
+endfunction "}}}
+
 function! s:InsideEnum() "{{{
     let braceLine = s:InsideWhat()
     return braceLine =~ '^\s*enum'
@@ -178,6 +195,12 @@ function! s:InsideDataStructure() "{{{
     let braceLine = s:InsideWhat()
     return braceLine =~ '\(enum\|union\|struct\)' ||
                 \ s:InsideInitialization()
+endfunction "}}}
+
+function! s:InsideFunction() "{{{
+    let braceLine = s:InsideWhat()
+    Log 'bl ' . braceLine
+    return braceLine =~ ')\s*{\s*$'
 endfunction "}}}
 
 function! s:InsideWhat() "{{{
@@ -201,6 +224,7 @@ function! s:EndLine(key) "{{{
     if a:key == "\r"
         let line = getline('.')
         if s:InString() && line =~ '"$'
+            Log "inString && line =~ '\"$'"
             Log eolChar . a:key
             return eolChar . a:key
         elseif s:InCommentOrString() || s:AlreadyEnded() || s:BlankLine() || s:Macro()
@@ -212,7 +236,13 @@ function! s:EndLine(key) "{{{
             return eolChar . a:key
         endif
     elseif a:key == "\e"
-        if s:InCommentOrString() || s:AlreadyEnded() || s:BlankLine() || !s:EOL() || s:Macro() || (s:NextLineClosesDataStructure() && insideSomething)
+        if s:InCommentOrString() ||
+                    \ s:AlreadyEnded() ||
+                    \ s:BlankLine() || 
+                    \ !s:EOL() ||
+                    \ s:Macro() ||
+                    \ (s:NextLineClosesDataStructure() && insideSomething) ||
+                    \ s:LineClosesFunction()
             Log a:key
             return a:key
         else
