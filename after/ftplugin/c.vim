@@ -42,6 +42,24 @@ function! s:InFunction() "{{{
     return line =~ '\w\+\s*('
 endfunction "}}}
 
+function! s:InComment() " {{{
+    let syn = s:SyntaxName(line('.'), col('.') - 1, 1)
+    if syn =~? 'comment'
+        return 1
+    else
+        return 0
+    endif
+endfunction "}}}
+
+function! s:InString() " {{{
+    let syn = s:SyntaxName(line('.'), col('.') - 1, 1)
+    if syn =~? 'string'
+        return 1
+    else
+        return 0
+    endif
+endfunction "}}}
+
 function! s:InCommentOrString() " {{{
     let syn = s:SyntaxName(line('.'), col('.') - 1, 1)
     if syn =~? 'comment' || syn =~? 'string'
@@ -176,11 +194,17 @@ function! s:EndLine(key) "{{{
     let eolChar = ';'
     let insideSomething = s:InsideEnum() || s:InsideInitialization()
     if insideSomething
+        Log "insideSomething"
         let eolChar = ','
     endif
 
     if a:key == "\r"
-        if s:InCommentOrString() || s:AlreadyEnded() || s:BlankLine() || s:Macro()
+        let line = getline('.')
+        if s:InString() && line =~ '"$'
+            Log eolChar . a:key
+            return eolChar . a:key
+        elseif s:InCommentOrString() || s:AlreadyEnded() || s:BlankLine() || s:Macro()
+            Log "in comment, string or already ended"
             Log a:key
             return a:key
         else
@@ -205,7 +229,7 @@ function! s:ExpandStatement(key) "{{{
     let line = getline('.')
     let mainAction = ""
     let endAction = ""
-    if s:InCommentOrString()
+    if s:InComment()
         Log "match Comment"
     elseif line =~ ';$'
         Log "match ';$'"

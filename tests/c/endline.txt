@@ -1,0 +1,5 @@
+char *another = "Zed"
+
+%
+char *another = "Zed";
+
