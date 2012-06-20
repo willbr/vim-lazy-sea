@@ -1,0 +1,12 @@
+int main
+if argc is 1
+else if argc is 2
+<esc>kwwa<esc>
+%
+int main(int argc, char *argv[]) {
+    if (argc == 1) {
+    } else if (argc == 2) {
+        
+    }
+    return 0;
+}

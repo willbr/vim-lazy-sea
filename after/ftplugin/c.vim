@@ -266,7 +266,10 @@ function! s:ExpandStatement(key) "{{{
     elseif line =~ '{\s*$' "{{{
         Log "match {"
         let saveCursor = getpos('.')
+        " jump to open brace
+        normal $
         let closeBrace = searchpair('{', '', '}', 'W', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string"')
+        Log "closeBrace: " . closeBrace
         call setpos('.', saveCursor)
         
         "check ident levels match
@@ -274,10 +277,13 @@ function! s:ExpandStatement(key) "{{{
             let openIndent = substitute(line, '^\(\s*\).*$', '\1', '')
             let closeLine = getline(closeBrace)
             let closeIndent = substitute(closeLine, '^\(\s*\).*$', '\1', '')
+            Log line
+            Log closeLine
             if openIndent != closeIndent
                 let closeBrace = 0
             endif
         endif
+        Log "indent matched closeBrace: " . closeBrace
 
         if !closeBrace
             echom "closeBrace"
