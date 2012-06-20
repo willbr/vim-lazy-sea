@@ -1,0 +1,17 @@
+include stdio
+define haha 5
+ifndef haha
+undef haha
+if 5
+else
+endif
+
+%
+#include <stdio.h>
+#define HAHA 5
+#ifndef HAHA
+#undef HAHA
+#if 5
+#else
+#endif
+

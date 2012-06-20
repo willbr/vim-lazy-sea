@@ -30,6 +30,7 @@ iabb <expr> <buffer> ifndef <SID>FirstWord() ? "#ifndef" : "ifndef"
 iabb <expr> <buffer> undef <SID>FirstWord() ? "#undef" : "undef"
 iabb <expr> <buffer> if <SID>FirstWord() ? "#if" : "if"
 iabb <expr> <buffer> else <SID>FirstWord() ? "#else" : "else"
+iabb <expr> <buffer> endif <SID>FirstWord() ? "#endif" : "endif"
 
 function! s:SyntaxName(l, c, ...) "{{{
     let trans = a:0 > 0 ? a:1 : 0
@@ -75,7 +76,9 @@ endfunction "}}}
 
 function! s:MatchDefineConst() "{{{
     let line = getline('.')
-    return line =~ '^#define \w\+\s'
+    return line =~ '^#define \w\+\s' ||
+                \ line =~ '^#ifndef \w\+' ||
+                \ line =~ '^#undef \w\+'
 endfunction "}}}
 
 function! s:MatchIf() "{{{
@@ -262,6 +265,7 @@ endfunction "}}}
 function! s:ExpandStatement(key) "{{{
     Log "ExpandStatement " . a:key
     let line = getline('.')
+    Log 'line: ' . line
     let mainAction = ""
     let endAction = ""
     if s:InComment()
@@ -404,7 +408,7 @@ function! s:ExpandStatement(key) "{{{
     " match include macro
     elseif s:MatchDefineConst() " {{{
         Log "match #define <CONST>"
-        let newLine = substitute(line, '^\(#define \)\(\w\+\)\s', '\1\U\2 ', '')
+        let newLine = substitute(line, '^\(#\w\+ \)\(\w\+\)', '\1\U\2', '')
         call setline('.', newLine)
         "}}}
     elseif s:MatchInclude() " {{{
