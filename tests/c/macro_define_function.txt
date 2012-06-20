@@ -1,0 +1,5 @@
+define new(T, N) Object_new(sizeof(T), T##Proto, N)
+
+%
+#define NEW(T, N) Object_new(sizeof(T), T##Proto, N)
+

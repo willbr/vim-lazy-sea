@@ -76,7 +76,7 @@ endfunction "}}}
 
 function! s:MatchDefineConst() "{{{
     let line = getline('.')
-    return line =~ '^#define \w\+\s' ||
+    return line =~ '^#define \w\+' ||
                 \ line =~ '^#ifndef \w\+' ||
                 \ line =~ '^#undef \w\+'
 endfunction "}}}
