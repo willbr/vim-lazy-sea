@@ -1,0 +1,5 @@
+typedef int (*compare_cb)(int a, int b)
+
+%
+typedef int (*compare_cb)(int a, int b);
+

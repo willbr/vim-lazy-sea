@@ -127,7 +127,8 @@ function! s:MatchFunctionDefinition() "{{{
     let line = getline('.')
     return line =~ '^\S\+\s\+\S\+' &&
                 \ line =~ '(.*)' &&
-                \ line !~ '='
+                \ line !~ '=' &&
+                \ line !~ 'typedef'
 endfunction "}}}
 
 function! s:MatchInclude() " {{{
