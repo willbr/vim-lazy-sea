@@ -11,6 +11,8 @@ imap <buffer> <ESC> <Space><bs><Plug>ExpandStatementESC
 imap <buffer> <CR> <Space><bs><Plug>ExpandStatementCR
 imap <buffer> <BS> <BS><Plug>BackspaceHandler
 
+iabb <expr> <buffer> as <SID>InCommentOrString() ? "is" : "="
+
 iabb <expr> <buffer> is <SID>InCommentOrString() ? "is" : "=="
 iabb <expr> <buffer> isnt <SID>InCommentOrString() ? "isnt" : "!="
 iabb <expr> <buffer> not <SID>InCommentOrString() ? "not" : "!"
