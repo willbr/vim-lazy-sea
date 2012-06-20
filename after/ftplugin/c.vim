@@ -19,7 +19,7 @@ iabb <expr> <buffer> not <SID>InCommentOrString() ? "not" : "!"
 iabb <expr> <buffer> and <SID>InCommentOrString() ? "and" : "&&"
 iabb <expr> <buffer> or <SID>InCommentOrString() ? "or" : "\|\|"
 
-iabb <expr> <buffer> nullchar <SID>InCommentOrString() ? "nullchar" : "'\0'"
+iabb <expr> <buffer> nullchar <SID>InCommentOrString() ? "nullchar" : "'\\0'"
 
 iabb <expr> <buffer> null <SID>InCommentOrString() ? "null" : "NULL"
 iabb <expr> <buffer> eof <SID>InCommentOrString() ? "eof" : "EOF"
