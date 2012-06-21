@@ -24,6 +24,15 @@ iabb <expr> <buffer> nullchar <SID>InCommentOrString() ? "nullchar" : "'\\0'"
 iabb <expr> <buffer> null <SID>InCommentOrString() ? "null" : "NULL"
 iabb <expr> <buffer> eof <SID>InCommentOrString() ? "eof" : "EOF"
 
+iabb <buffer> __file __FILE__
+iabb <buffer> __file__ __FILE__
+iabb <buffer> __line __LINE__
+iabb <buffer> __line__ __LINE__
+iabb <buffer> __vaargs __VA_ARGS__
+iabb <buffer> __vaargs__ __VA_ARGS__
+iabb <buffer> __va_args __VA_ARGS__
+iabb <buffer> __va_args__ __VA_ARGS__
+
 iabb <expr> <buffer> include <SID>FirstWord() ? "#include" : "include"
 iabb <expr> <buffer> define <SID>FirstWord() ? "#define" : "define"
 iabb <expr> <buffer> ifndef <SID>FirstWord() ? "#ifndef" : "ifndef"
