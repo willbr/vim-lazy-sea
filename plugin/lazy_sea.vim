@@ -81,14 +81,31 @@ function! s:eputs(name, str) "{{{
     call append(line('$'), "end".a:name)
 endfunction "}}}
 
+function! s:totitle(input_string)
+    return toupper(strpart(a:input_string, 0, 1)) . tolower(strpart(a:input_string, 1))
+endfunction
 
 function! s:ParseTestDir(folder) "{{{
     let filetype = substitute(a:folder, '.*/\(.*\)$', '\1', '')
-    for f in split(glob( a:folder . "/*.txt"), "\n")
+
+    new
+    exec "setfiletype " . filetype
+    let cmdSuccessCount = 0
+    let cmdFails = []
+    exec "let [cmdSuccessCount, cmdFails] = LazySeaTestCommands" . s:totitle(filetype) . "()"
+    let s:successCount += cmdSuccessCount
+    for fail in cmdFails
+        let [cmd_name, input, expectedOutput, output] = fail
+        call add(s:failed, [cmd_name, input, expectedOutput, output])
+        let s:failCount += 1
+    endfor
+    quit!
+
+    for file_name in split(glob( a:folder . "/*.txt"), "\n")
         let input = []
         let expectedOutput = []
         let splitFound = 0
-        for line in readfile(f)
+        for line in readfile(file_name)
             if line == "%"
                 let splitFound = 1
             elseif splitFound == 0
@@ -104,7 +121,7 @@ function! s:ParseTestDir(folder) "{{{
         if result == 1
             let s:successCount += 1
         else
-            call add(s:failed, [f, input, expectedOutput, output])
+            call add(s:failed, [file_name, input, expectedOutput, output])
             let s:failCount += 1
         endif
     endfor

@@ -373,4 +373,8 @@ function! s:BackspaceHandler() "{{{
     return ""
 endfunction "}}}
 
+function! LazySeaTestCommandsJavascript() "{{{
+    return [0, []]
+endfunction "}}}
+
 "  vim: fdm=marker

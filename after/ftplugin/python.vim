@@ -63,4 +63,9 @@ endfunction " }}}
 inoremap <silent> <Plug>RewriteLine  <C-R>=<SID>RewriteLine()<CR>
 imap <buffer> <CR> <Plug>RewriteLine
 " }}}
+
+function! LazySeaTestCommandsPython() "{{{
+    return [0, []]
+endfunction "}}}
+
 "  vim: fdm=marker

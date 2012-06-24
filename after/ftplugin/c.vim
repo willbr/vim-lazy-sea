@@ -91,10 +91,8 @@ function! s:MatchDefineConst() "{{{
 endfunction "}}}
 
 function! s:MatchSingleLineStatement() "{{{
-    Log 'MatchSingleLineStatement'
     let line = getline('.')
     if line !~ '^\s\+\w\+\s*('
-        Log '! space word ('
         return 0
     endif
 
@@ -104,15 +102,10 @@ function! s:MatchSingleLineStatement() "{{{
     let [lnum, col] = searchpairpos('(', '', ')', 'W', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "\(string|comment\)"', line('.'))
 
     if lnum != 0 || col != 0
-        Log 'closing ) found'
         let rhs = strpart(getline('.'), col)
-        Log 'rhs: "' . rhs . '"'
         if rhs =~ '^\s*\(++\|--\|(\|\w\)'
-            Log 'found single line statement'
             let returnValue = 1
         endif
-    else
-        Log 'closing ) not found'
     endif
 
     call setpos('.', saveCursor)
@@ -549,5 +542,43 @@ function! s:BackspaceHandler() "{{{
     endif
     return ""
 endfunction "}}}
+
+function! s:ClearBuffer() "{{{
+    normal ggdG
+endfunction "}}}
+
+function! LazySeaTestCommandsC() "{{{
+    let s:successCount = 0
+    let s:fails = []
+
+    let s:TestCommandName = 's:MatchSingleWordStatement'
+    call s:TestCommand('    puts', 1)
+    call s:TestCommand('    puts()', 0)
+
+    let s:TestCommandName = 's:FirstWord'
+    call s:TestCommand('if', 1)
+    call s:TestCommand('    if', 0)
+
+    let s:TestCommandName = 's:MatchSingleLineStatement'
+    call s:TestCommand('    if(block) free(block)', 1)
+    call s:TestCommand('    if (1) > 0 ', 0)
+    return [s:successCount, s:fails]
+endfunction "}}}
+
+function! s:TestCommand(input, expectedOutput, ...)
+    call s:ClearBuffer()
+    call setline(1, a:input)
+    if a:0 == 1
+        exec "normal " . a:1
+    endif
+    let cmd_name = s:TestCommandName
+    let output = function(cmd_name)()
+    if output == a:expectedOutput
+        let s:successCount += 1
+    else
+        let title = cmd_name . ' from filetype ' . &filetype
+        call add(s:fails, [title, [a:input], [a:expectedOutput], [output]])
+    endif
+endfunction
 
 "  vim: fdm=marker
