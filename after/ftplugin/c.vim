@@ -442,7 +442,7 @@ function! s:ExpandStatement(key) "{{{
         Log "match switch"
         let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
         call setline('.', newLine)
-        let mainAction = "\eodefault:\rbreak;\r}\ekkk"
+        let mainAction = "\eodefault:\r}\ekk"
         let endAction = "ocase "
         "}}}
     elseif s:MatchCase() " {{{
