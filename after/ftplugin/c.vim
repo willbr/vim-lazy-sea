@@ -35,6 +35,7 @@ iabb <buffer> __va_args__ __VA_ARGS__
 
 iabb <expr> <buffer> include <SID>FirstWord() ? "#include" : "include"
 iabb <expr> <buffer> define <SID>FirstWord() ? "#define" : "define"
+iabb <expr> <buffer> ifdef <SID>FirstWord() ? "#ifdef" : "ifdef"
 iabb <expr> <buffer> ifndef <SID>FirstWord() ? "#ifndef" : "ifndef"
 iabb <expr> <buffer> undef <SID>FirstWord() ? "#undef" : "undef"
 iabb <expr> <buffer> if <SID>FirstWord() ? "#if" : "if"
