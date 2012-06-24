@@ -90,6 +90,35 @@ function! s:MatchDefineConst() "{{{
                 \ line =~ '^#undef \w\+'
 endfunction "}}}
 
+function! s:MatchSingleLineStatement() "{{{
+    Log 'MatchSingleLineStatement'
+    let line = getline('.')
+    if line !~ '^\s\+\w\+\s*('
+        Log '! space word ('
+        return 0
+    endif
+
+    let returnValue = 0
+    let saveCursor = getpos('.')
+    normal 0f(
+    let [lnum, col] = searchpairpos('(', '', ')', 'W', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "\(string|comment\)"', line('.'))
+
+    if lnum != 0 || col != 0
+        Log 'closing ) found'
+        let rhs = strpart(getline('.'), col)
+        Log 'rhs: "' . rhs . '"'
+        if rhs =~ '^\s*\(++\|--\|(\|\w\)'
+            Log 'found single line statement'
+            let returnValue = 1
+        endif
+    else
+        Log 'closing ) not found'
+    endif
+
+    call setpos('.', saveCursor)
+    return returnValue
+endfunction "}}}
+
 function! s:MatchIf() "{{{
     let line = getline('.')
     return line =~ '^\s\+if'
@@ -137,10 +166,10 @@ endfunction "}}}
 
 function! s:MatchFunctionDefinition() "{{{
     let line = getline('.')
-    return line =~ '^\S\+\s\+\S\+' &&
-                \ line =~ '(.*)' &&
+    return line =~ '^\S\+\s\+\S\+\s*(' &&
                 \ line !~ '=' &&
-                \ line !~ 'typedef'
+                \ line !~ 'typedef' &&
+                \ line !~ '^\s\*\(if|for|while|do\)'
 endfunction "}}}
 
 function! s:MatchInclude() " {{{
@@ -289,7 +318,6 @@ function! s:ExpandStatement(key) "{{{
         let closeBrace = searchpair('{', '', '}', 'W', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string"')
         Log "closeBrace: " . closeBrace
         call setpos('.', saveCursor)
-        
         "check ident levels match
         if closeBrace
             let openIndent = substitute(line, '^\(\s*\).*$', '\1', '')
@@ -313,12 +341,46 @@ function! s:ExpandStatement(key) "{{{
             let endAction = "o"
         endif
         "}}}
+    elseif s:MatchSingleLineStatement() "{{{
+        "}}}
     elseif s:MatchIf() "{{{
         Log "match if"
-        let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
-        call setline('.', newLine)
-        let mainAction = "\eo}\ek"
-        let endAction = "o"
+
+        let foundColon = 0
+        let searching = 1
+        normal 0
+        while searching
+            let [lnum, col] = searchpos(':', '', line('.'))
+            Log lnum . ', ' . col
+            if lnum == 0 && col == 0
+                let searching = 0
+            else
+                if !s:InCommentOrString()
+                    let foundColon = col
+                endif
+            endif
+        endwhile
+
+        if foundColon
+            Log "foundColon " . foundColon
+            let lhs = strpart(getline('.'), 0, foundColon - 1)
+            let rhs = strpart(getline('.'), foundColon)
+            let lhs = substitute(lhs, '^\(\s*\w\+\)\s\+\(.*\)', '\1 (\2)', '')
+            if rhs =~ ';$'
+                let newLine = lhs . rhs
+            else
+                let newLine = lhs . rhs . ";"
+            endif
+            call setline('.', newLine)
+            Log 'newLine <<' . newLine . '>>'
+            let mainAction = "\e"
+            let endAction = "o"
+        else
+            let newLine = substitute(line, '^\(\s*\w\+\)\s\+\(.*\)$', '\1 (\2) {', '')
+            call setline('.', newLine)
+            let mainAction = "\eo}\ek"
+            let endAction = "o"
+        endif
         "}}}
     elseif s:MatchElse() "{{{
         Log "match else"
@@ -465,6 +527,8 @@ function! s:ExpandStatement(key) "{{{
     endif
 
     Log "end if else switches"
+    Log "mainAction" . mainAction
+    Log "endAction" . endAction
     if mainAction == ""
         Log "mainAction empty"
         return s:EndLine(a:key)
