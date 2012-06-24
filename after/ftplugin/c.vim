@@ -512,8 +512,10 @@ function! s:ExpandStatement(key) "{{{
         "}}}
     elseif s:MatchFunctionDefinition() && s:EOL() "{{{
         Log "match function definition"
-        let mainAction = " {\eo}\r\ekk"
-        let endAction = "o"
+        if expand("%:e") != "h"
+            let mainAction = " {\eo}\r\ekk"
+            let endAction = "o"
+        endif
         "}}}
     else "{{{
         Log 'unmatched ' . line
